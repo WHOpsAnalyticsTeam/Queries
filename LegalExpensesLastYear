@@ -1,0 +1,29 @@
+
+--pull legal expenses for the last 12 months
+
+--using tables: Analysts.dbo.claimslist and Windhaven.dbo.Expenses
+
+
+-- this is the first query to be revised by Glenn not approved yes, need to connect this to excell need to create a view for this query called
+-- VIEW NAME: 
+
+--CREATE VIEW Analysts.dbo.Texas.Legal_Expenses_Last12Months [(
+--expense.*,
+--cl.claimnum,cl.claimIncidentNum,cl.policyNum,cl.Coverage,cl.ST,cl.adjuster,cl.dateofLoss,cl.dateReported,cl.unit
+--)] AS
+
+SELECT --cl.claimId, cl.AllExpenses, cl.legalExpensePaid
+ce_totals.*,
+cl.claimnum,cl.claimIncidentNum,cl.policyNum,cl.Coverage,cl.ST,cl.adjuster,cl.dateofLoss,cl.dateReported,cl.unit
+FROM Analysts.dbo.claimslist cl
+LEFT JOIN (       SELECT cl.lossPaid,ce.claimID,ce.paymentDate
+				  FROM Windhaven.dbo.ClaimExpense ce 
+			      LEFT JOIN Analysts.dbo.claimslist cl
+                  ON ce.claimID = cl.claimId
+				  WHERE ce.isExpense = '3' AND cl.ST = 'TX'      )  ce_totals
+ON cl.claimId = ce_totals.claimID
+WHERE ce_totals.lossPaid IS NOT NULL 
+AND ce_totals.lossPaid != '0.00' --all the fields where the loss paid is NULL are excluded this is an assumption based on the table we are working on claimexpenses
+AND CAST(ce_totals.paymentDate AS DATE) > DATEADD(MONTH,-12,GETDATE())
+ORDER BY ce_totals.paymentDate
+
