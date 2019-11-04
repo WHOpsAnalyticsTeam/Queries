@@ -1,0 +1,26 @@
+
+
+--monthly report to the PD Supervisors with PAID Collisions so we can review and determine if the file has been sent to subrogation for recovery
+
+
+--as you can note this is using the tables Windhaven.dbo.ClaimExpense and Analysts.dbo.claimslist
+
+--CREATE VIEW Analysts.dbo.Texas.Legal_Expenses_Last12Months [(
+--expense.*,
+--cl.claimnum,cl.claimIncidentNum,cl.policyNum,cl.Coverage,cl.ST,cl.adjuster,cl.dateofLoss,cl.dateReported,cl.unit
+--)] AS
+
+SELECT 
+expense.*,
+cl.claimnum,cl.claimIncidentNum,cl.policyNum,cl.Coverage,cl.ST,cl.adjuster,cl.dateofLoss,cl.dateReported,cl.unit
+FROM Analysts.dbo.claimslist cl
+LEFT JOIN (  SELECT cl.lossPaid,ce.claimID,ce.paymentDate
+			 FROM Windhaven.dbo.ClaimExpense ce 
+			 LEFT JOIN Analysts.dbo.claimslist cl
+             ON ce.claimID = cl.claimId
+		     WHERE cl.ST = 'TX'                                    )  expense
+ON cl.claimId = expense.claimID
+WHERE expense.lossPaid IS NOT NULL 
+AND cl.Coverage LIKE 'COLL'
+AND CAST(expense.paymentDate AS DATE) > DATEADD(DAY, -30, GETDATE())
+ORDER BY expense.paymentDate
